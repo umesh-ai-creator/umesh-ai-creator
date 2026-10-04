@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Umesh AI Creator</title>
 
 <style>
@@ -11,19 +12,15 @@ body {
   font-family: Arial, sans-serif;
   background: #0f172a;
   color: white;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
+  padding: 20px;
 }
 
 .box {
-  width: 90%;
   max-width: 700px;
-  margin-top: 50px;
-  padding: 25px;
+  margin: 30px auto;
   background: #1e293b;
+  padding: 25px;
   border-radius: 20px;
-  box-shadow: 0 0 25px #000;
 }
 
 h1 {
@@ -32,18 +29,18 @@ h1 {
 
 textarea {
   width: 100%;
-  height: 130px;
-  padding: 12px;
+  height: 150px;
   box-sizing: border-box;
+  padding: 15px;
   border-radius: 12px;
   border: none;
-  margin-top: 10px;
   font-size: 16px;
+  margin-top: 10px;
 }
 
 button {
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   margin-top: 15px;
   border: none;
   border-radius: 12px;
@@ -64,11 +61,11 @@ button:disabled {
 
 #result {
   margin-top: 15px;
-  padding: 15px;
+  padding: 18px;
   background: #020617;
   border-radius: 12px;
   white-space: pre-wrap;
-  min-height: 100px;
+  min-height: 150px;
 }
 </style>
 </head>
@@ -79,39 +76,43 @@ button:disabled {
 
 <h1>🤖 Umesh AI Creator</h1>
 
-<p>Apna topic likho:</p>
+<p>Apna kaam likho:</p>
 
 <textarea id="topic"
-placeholder="Example: Ek scary horror story banao"></textarea>
+placeholder="Example: Horror story ke liye title aur hashtags banao"></textarea>
 
-<button id="generateBtn">Generate AI</button>
+<button id="generateBtn">
+Generate AI
+</button>
 
 <div id="status">
 AI model abhi load nahi hua.
 </div>
 
 <div id="result">
-AI ka result yahan dikhega...
+AI ka answer yahan dikhega...
 </div>
 
 </div>
 
 <script type="module">
 
-import { pipeline } from
-"https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0";
+import { pipeline }
+from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0";
 
 let generator = null;
 
-const MODEL = "onnx-community/Qwen3-0.6B-ONNX";
+const MODEL =
+"onnx-community/Qwen3-0.6B-Instruct-ONNX";
 
-async function loadModel() {
 
-  if (generator) return generator;
+async function loadAI() {
 
-  const status = document.getElementById("status");
+  if (generator) {
+    return generator;
+  }
 
-  status.textContent =
+  document.getElementById("status").textContent =
   "AI model load ho raha hai... pehli baar thoda time lagega.";
 
   generator = await pipeline(
@@ -123,10 +124,12 @@ async function loadModel() {
     }
   );
 
-  status.textContent = "AI Ready ✅";
+  document.getElementById("status").textContent =
+  "AI Ready ✅";
 
   return generator;
 }
+
 
 async function generateAI() {
 
@@ -139,80 +142,131 @@ async function generateAI() {
   const button =
   document.getElementById("generateBtn");
 
+
   if (!topic) {
+
     result.textContent =
-    "Pehle koi topic likho.";
+    "Pehle apna kaam likho.";
+
     return;
   }
 
+
   button.disabled = true;
+
+  result.textContent =
+  "AI answer bana raha hai...";
+
 
   try {
 
-    const ai = await loadModel();
+    const ai = await loadAI();
 
-    result.textContent =
-    "AI answer bana raha hai...";
 
     const messages = [
 
       {
         role: "system",
+
         content:
-        "You are Umesh AI Creator. Answer in simple Hindi or Hinglish. Give useful, original and safe content."
+        `You are Umesh AI Creator.
+
+You are a helpful content creation AI.
+
+Understand exactly what the user asks.
+
+If the user asks for a YouTube title, give titles.
+
+If the user asks for hashtags, give hashtags.
+
+If the user asks for a description, give a description.
+
+If the user asks for a horror story, write a horror story.
+
+If the user asks for multiple things, provide all requested things.
+
+Answer in simple Hindi or Hinglish.
+
+Do not change the user's topic.
+
+Do not talk about unrelated subjects.
+
+Do not repeat the user's question.
+
+Give only the useful answer.`
       },
 
       {
         role: "user",
-        content:
-        "Create useful content for this topic: " + topic
+
+        content: topic
       }
 
     ];
 
-    const output = await ai(messages, {
 
-      max_new_tokens: 300,
+    const output = await ai(
+      messages,
+      {
+        max_new_tokens: 400,
+        do_sample: true,
+        temperature: 0.6
+      }
+    );
 
-      do_sample: true,
 
-      temperature: 0.7
-
-    });
-
-    const text =
+    const generated =
     output?.[0]?.generated_text;
 
-    if (Array.isArray(text)) {
+
+    if (Array.isArray(generated)) {
+
+      const last =
+      generated[generated.length - 1];
 
       result.textContent =
-      text[text.length - 1]?.content ||
-      "AI ne output nahi diya.";
+      last?.content ||
+      "AI ne answer nahi diya.";
 
     } else {
 
       result.textContent =
-      String(text || "AI ne output nahi diya.");
+      String(
+        generated ||
+        "AI ne answer nahi diya."
+      );
 
     }
 
-  } catch (error) {
+  }
 
-    result.textContent =
-    "AI start nahi ho paya. Browser/WebGPU support check karo.";
+  catch (error) {
 
     console.error(error);
 
-  } finally {
+    result.textContent =
+    "AI chalane me problem aa gayi. Page refresh karke dobara try karo.";
+
+    document.getElementById("status").textContent =
+    "AI Error ❌";
+
+  }
+
+  finally {
 
     button.disabled = false;
 
   }
+
 }
+
 
 document
 .getElementById("generateBtn")
-.addEventListener("click", generateAI);
+.addEventListener(
+  "click",
+  generateAI
+);
 
 </script>
 
